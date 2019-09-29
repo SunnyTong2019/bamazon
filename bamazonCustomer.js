@@ -3,6 +3,7 @@ require("dotenv").config();
 var keys = require("./keys.js");
 var mysql = require("mysql");
 var inquirer = require("inquirer");
+var Table = require('easy-table');
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -23,8 +24,8 @@ function shopping() {
         if (err) throw err;
         
         // display all the products
-        console.table(res);
-        console.log("\n");
+        console.log("\nProducts for sale:\n");
+        console.log(Table.print(res));
 
         inquirer.prompt([
             {
