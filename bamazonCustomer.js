@@ -14,54 +14,34 @@ var connection = mysql.createConnection({
 
 connection.connect(function (err) {
     if (err) throw err;
-    console.log("\nconnected as id " + connection.threadId + "\n");
-
-    readProducts();
-
+    shopping();
 });
 
 
-function readProducts() {
-    console.log("Displaying all products...\n");
+function shopping() {
     connection.query("SELECT * FROM products", function (err, res) {
         if (err) throw err;
+        
+        // display all the products
         console.table(res);
-        console.table("\n");
-        userShopping(res)
-    });
-}
+        console.log("\n");
 
-function userShopping(res) {
-    inquirer.prompt([
-        {
-            name: "id",
-            type: "input",
-            message: "What is the id of the product you would like to buy? (Press Q to quit)"
-        }
-        // {
-        //     name: "quantity",
-        //     type: "number",
-        //     message: "How many units of the product you would like to buy?",
-        // }
-    ]).then(function (answer) {
+        inquirer.prompt([
+            {
+                name: "id",
+                type: "input",
+                message: "What is the id of the product you would like to buy? (Press Q to quit)"
+            }
+        ]).then(function (answer) {
 
-        if(answer.id == "q" || answer.id == "Q"){
-            console.log("\nThank you!\n");
-            connection.end();
-            return;
-        }
-
-        var productIDs = [];
-
-        for (var product of res) {
-            productIDs.push(product.item_id);
-        }
-
-        var productIndex = productIDs.indexOf(parseInt(answer.id));
-
-        if (productIndex !== -1) {
+            // if user wants to quit
+            if (answer.id === "q" || answer.id === "Q") {
+                console.log("\nThank you!\n");
+                connection.end();
+                return;
+            }
             
-            // product exists, ask user how many they want to buy
+            // if user didn't answer quit, then ask second question
             inquirer.prompt([
                 {
                     name: "quantity",
@@ -69,45 +49,40 @@ function userShopping(res) {
                     message: "How many units of the product you would like to buy?",
                 }
             ]).then(function (answers) {
-               
-                for (var product of res) {
-                    if(product.item_id === parseInt(answer.id)) {
-                        
-                        if (parseInt(answers.quantity) > parseInt(product.stock_quantity)) {
-                            console.log("\nInsufficient quantity!\n")
+                
+                // loop through products array "res" to find the product id that user entered
+                for (var i = 0; i < res.length; i++) {
+                    if (res[i].item_id === parseInt(answer.id)) {
+
+                        if (parseInt(answers.quantity) > parseInt(res[i].stock_quantity)) {
+                            console.log("\nInsufficient quantity!\n");
+                            shopping();
                         } else {
-        
-                            var remainingQuantity = parseInt(product.stock_quantity) - parseInt(answers.quantity);
-                            var totalCost = parseInt(answers.quantity) * parseFloat(product.price);
-        
-                            updateProduct(product.item_id, remainingQuantity, totalCost);
+
+                            var remainingQuantity = res[i].stock_quantity - parseInt(answers.quantity);
+                            var totalCost = parseInt(answers.quantity) * res[i].price;
+
+                            updateProduct(res[i].item_id, remainingQuantity, totalCost);
                         }
+
+                        // product is found, stop the loop
+                        break;
                     }
                 }
-
-               
-
+                
+                // if i equals array length, that means it has looped through the whole array but didn't find the prodcut id that user entered, then display a message and re-shopping
+                if (i === res.length) {
+                    console.log("\nThis product doesn't exist.\n");
+                    shopping();
+                }
             });
-
-
-
-
-
-        } else {
-            console.log("\nThis product doesn't exist.\n");
-        }
-
-
-
-
-
-
-
+        });
     });
 }
 
 
 function updateProduct(id, quantity, cost) {
+
     connection.query(
         "UPDATE products SET ? WHERE ?",
         [
@@ -119,9 +94,9 @@ function updateProduct(id, quantity, cost) {
             }
         ],
         function (err, res) {
+
             if (err) throw err;
             console.log("\nOrder is placed successfully! Your total cost is $" + cost + ".\n");
-            readProducts();
-            
+            shopping();
         });
 }
