@@ -3,7 +3,7 @@ require("dotenv").config();
 var keys = require("./keys.js");
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-var Table = require('easy-table');
+var Table = require('cli-table');
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -20,12 +20,23 @@ connection.connect(function (err) {
 
 
 function shopping() {
-    connection.query("SELECT * FROM products", function (err, res) {
+    connection.query("select * from products where stock_quantity > 0", function (err, res) {
         if (err) throw err;
-        
+
         // display all the products
         console.log("\nProducts for sale:\n");
-        console.log(Table.print(res));
+
+        var table = new Table({
+            head: ['ID', 'Name', 'Price', "Stock Quantity"]
+        });
+
+        for (var item of res) {
+            table.push([item.item_id, item.product_name, item.price, item.stock_quantity]);
+        }
+
+        console.log(table.toString());
+        console.log("\n");
+
 
         inquirer.prompt([
             {
@@ -41,7 +52,7 @@ function shopping() {
                 connection.end();
                 return;
             }
-            
+
             // if user didn't answer quit, then ask second question
             inquirer.prompt([
                 {
@@ -50,7 +61,7 @@ function shopping() {
                     message: "How many units of the product you would like to buy?",
                 }
             ]).then(function (answers) {
-                
+
                 // loop through products array "res" to find the product id that user entered
                 for (var i = 0; i < res.length; i++) {
                     if (res[i].item_id === parseInt(answer.id)) {
@@ -62,15 +73,18 @@ function shopping() {
 
                             var remainingQuantity = res[i].stock_quantity - parseInt(answers.quantity);
                             var totalCost = parseInt(answers.quantity) * res[i].price;
-
-                            updateProduct(res[i].item_id, remainingQuantity, totalCost);
+                            var currentProductSale;
+                            if (res[i].product_sales) { currentProductSale = res[i].product_sales; } else { currentProductSale = 0; }
+                            var newProductSale = currentProductSale + totalCost;
+                        
+                            updateProduct(res[i].item_id, remainingQuantity, newProductSale, totalCost);
                         }
 
                         // product is found, stop the loop
                         break;
                     }
                 }
-                
+
                 // if i equals array length, that means it has looped through the whole array but didn't find the prodcut id that user entered, then display a message and re-shopping
                 if (i === res.length) {
                     console.log("\nThis product doesn't exist.\n");
@@ -82,13 +96,14 @@ function shopping() {
 }
 
 
-function updateProduct(id, quantity, cost) {
+function updateProduct(id, quantity, sales, cost) {
 
     connection.query(
         "UPDATE products SET ? WHERE ?",
         [
             {
-                stock_quantity: quantity
+                stock_quantity: quantity,
+                product_sales: sales
             },
             {
                 item_id: id

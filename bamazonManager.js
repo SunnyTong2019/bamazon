@@ -3,7 +3,7 @@ require("dotenv").config();
 var keys = require("./keys.js");
 var mysql = require("mysql");
 var inquirer = require("inquirer");
-var Table = require('easy-table');
+var Table = require('cli-table');
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -44,8 +44,19 @@ function displayProducts() {
         if (err) throw err;
 
         // display all the products
-        console.log("\nProducts for sale:\n");
-        console.log(Table.print(res));
+        console.log("\nAll Products:\n");
+
+        var table = new Table({
+            head: ['ID', 'Name', 'Department Name', 'Price', 'Stock Quantity']
+        });
+
+        for (var item of res) {
+            table.push([item.item_id, item.product_name, item.department_name, item.price, item.stock_quantity]);
+        }
+
+        console.log(table.toString());
+        console.log("\n");
+
         displayMenu();
     });
 }
@@ -56,9 +67,19 @@ function displayLowProducts() {
     connection.query("SELECT * FROM products where stock_quantity < 5", function (err, res) {
         if (err) throw err;
 
-        // display all the products
+        // display the products in low inventory
         console.log("\nProducts in Low Inventory:\n");
-        console.log(Table.print(res));
+
+        var table = new Table({
+            head: ['ID', 'Name', 'Department Name', 'Price', 'Stock Quantity']
+        });
+
+        for (var item of res) {
+            table.push([item.item_id, item.product_name, item.department_name, item.price, item.stock_quantity]);
+        }
+
+        console.log(table.toString());
+        console.log("\n");
         displayMenu();
     });
 }
