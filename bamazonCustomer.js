@@ -20,10 +20,10 @@ connection.connect(function (err) {
 
 
 function shopping() {
-    connection.query("select * from products where stock_quantity > 0", function (err, res) {
+
+    connection.query("select * from products where stock_quantity > 0", function (err, res) { // select the products that have inventory
         if (err) throw err;
 
-        // display all the products
         console.log("\nProducts for sale:\n");
 
         var table = new Table({

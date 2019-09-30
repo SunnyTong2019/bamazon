@@ -28,7 +28,7 @@ function displayMenu() {
     ]).then(function (answer) {
 
         switch (answer.menu) {
-            case "View Products for Sale": displayProductSales(); break;
+            case "View Product Sales by Department": displayProductSales(); break;
             case "Create New Department": addDepartment(); break;
             case "Exit": connection.end(); break;
         }
@@ -36,20 +36,21 @@ function displayMenu() {
 }
 
 
-function displayProducts() {
+function displayProductSales() {
 
-    connection.query("SELECT * FROM products", function (err, res) {
+    var query = "select d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales) as product_sales, (sum(p.product_sales) - d.over_head_costs) as total_profit from departments d, products p where d.department_name = p.department_name group by d.department_id, d.department_name";
+
+    connection.query(query, function (err, res) {
         if (err) throw err;
 
-        // display all the products
-        console.log("\nAll Products:\n");
+        console.log("\nProduct Sales by Department:\n");
 
         var table = new Table({
-            head: ['ID', 'Name', 'Department Name', 'Price', 'Stock Quantity']
+            head: ['department_id', 'department_name', 'over_head_costs', 'product_sales', 'total_profit']
         });
 
         for (var item of res) {
-            table.push([item.item_id, item.product_name, item.department_name, item.price, item.stock_quantity]);
+            table.push([item.department_id, item.department_name, item.over_head_costs, item.product_sales, item.total_profit]);
         }
 
         console.log(table.toString());
@@ -58,7 +59,6 @@ function displayProducts() {
         displayMenu();
     });
 }
-
 
 
 function addDepartment() {
@@ -84,7 +84,7 @@ function addDepartment() {
             },
             function (err, res) {
                 if (err) throw err;
-                console.log("\n" + res.affectedRows + " department addeded!\n");
+                console.log("\n" + res.affectedRows + " department added!\n");
                 displayMenu();
             }
         );

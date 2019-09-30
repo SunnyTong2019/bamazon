@@ -176,7 +176,7 @@ function addProduct() {
             },
             function (err, res) {
                 if (err) throw err;
-                console.log("\n" + res.affectedRows + " product addeded!\n");
+                console.log("\n" + res.affectedRows + " product added!\n");
                 displayMenu();
             }
         );
