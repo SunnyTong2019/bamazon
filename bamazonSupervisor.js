@@ -38,7 +38,7 @@ function displayMenu() {
 
 function displayProductSales() {
 
-    var query = "select d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales) as product_sales, (sum(p.product_sales) - d.over_head_costs) as total_profit from departments d, products p where d.department_name = p.department_name group by d.department_id, d.department_name";
+    var query = "select d.department_id, d.department_name, d.over_head_costs, sum(p.product_sales) as product_sales, (sum(p.product_sales) - d.over_head_costs) as total_profit from departments d, products p where d.department_name = p.department_name group by d.department_id order by total_profit desc";
 
     connection.query(query, function (err, res) {
         if (err) throw err;
